@@ -1,0 +1,59 @@
+What is Retrieval-Augmented Generation?
+
+Retrieval-Augmented Generation (RAG) is an AI technique that combines information retrieval with large language model (LLM) generation. Instead of relying solely on the knowledge encoded in an LLM during training, RAG systems retrieve relevant documents from an external knowledge base and use them to ground the model's response.
+
+How RAG Works
+
+The core RAG pipeline consists of two main phases:
+
+1. Ingestion Phase
+During ingestion, raw documents (PDFs, Word files, text files, etc.) are processed through an ETL pipeline. The text is extracted, cleaned, and split into smaller chunks. Each chunk is then converted into a numerical vector (embedding) using an embedding model. These embeddings are stored in a vector database, creating a searchable knowledge base.
+
+2. Query Phase
+When a user asks a question, the query is also converted into an embedding. The system searches the vector database for the most similar chunk embeddings (nearest neighbors). The top-k most relevant chunks are retrieved and passed as context to the LLM. The LLM then generates a response grounded in the retrieved context.
+
+Benefits of RAG
+
+RAG addresses several key limitations of standalone LLMs:
+- Knowledge cutoff: LLMs have a training cutoff date. RAG allows models to answer questions about recent or proprietary data.
+- Hallucination reduction: By grounding responses in retrieved documents, RAG reduces the risk of the model generating fabricated information.
+- Source attribution: RAG systems can cite the specific documents used to generate a response, improving transparency and trust.
+- Cost efficiency: Updating the knowledge base only requires re-indexing documents, not retraining the entire model.
+
+Vector Databases
+
+Vector databases are specialized databases designed to store and search high-dimensional vectors efficiently. Popular options include:
+- FAISS (Facebook AI Similarity Search): An open-source library for efficient similarity search.
+- Pinecone: A managed, cloud-native vector database.
+- Weaviate: An open-source vector search engine with hybrid search capabilities.
+- PGVector: A PostgreSQL extension that adds vector similarity search.
+
+Embedding Models
+
+Embedding models convert text into dense numerical vectors that capture semantic meaning. The Gemini embedding models (gemini-embedding-2 and gemini-embedding-001) support:
+- Dimensionalities of 768, 1536, or 3072
+- Task-specific embeddings for RETRIEVAL_DOCUMENT, RETRIEVAL_QUERY, and SEMANTIC_SIMILARITY
+- Batch processing for efficiency
+
+Chunking Strategies
+
+Document chunking is a critical step in RAG. The main strategies are:
+- Fixed-size chunking: Split text into chunks of a fixed character or token count with overlap.
+- Recursive chunking: Recursively split on paragraph breaks, then sentences, then words.
+- Semantic chunking: Split based on semantic boundaries (paragraphs, topics). This is the most commonly used approach.
+- Hierarchical chunking: Maintain document structure (chapters, sections, paragraphs).
+
+Evaluation Metrics
+
+RAG systems are evaluated on multiple dimensions:
+1. Chunk quality score
+2. Embedding quality score
+3. Vector database evaluation
+4. Query toxicity score
+5. Retrieval score
+6. Relevance score
+7. Coherence score
+8. Hallucination score
+9. Domain-based metrics
+10. Toxicity score
+11. Overall user satisfaction
