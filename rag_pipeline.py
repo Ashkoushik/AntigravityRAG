@@ -24,6 +24,7 @@ from vector_store_manager import FAISSVectorStore
 
 FAST_MODEL    = "gemini-3.8-flash"          # simple / short queries
 CAPABLE_MODEL = "gemini-3.8-flash"          # complex queries (swap to gemini-3.1-pro-preview for max quality)
+FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"]
 
 
 @dataclass
@@ -126,14 +127,22 @@ def _build_prompt(query: str, chunks: list[dict]) -> str:
     return f"Context:\n{context}\n\n---\n\nQuestion: {query}\n\nAnswer:"
 
 
-def _generate_answer(prompt: str, model: str) -> str:
+def _generate_answer(prompt: str, model: str) -> tuple[str, str]:
     client = genai.Client()
-    interaction = client.interactions.create(
-        model=model,
-        input=prompt,
-        system_instruction=_SYSTEM_PROMPT,
-    )
-    return interaction.output_text or ""
+    models_to_try = [model] + [m for m in FALLBACK_MODELS if m != model]
+    last_err = None
+    for m in models_to_try:
+        try:
+            interaction = client.interactions.create(
+                model=m,
+                input=prompt,
+                system_instruction=_SYSTEM_PROMPT,
+            )
+            return interaction.output_text or "", m
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err if last_err else RuntimeError("Failed to generate answer from all available models.")
 
 
 # ── Step 17: Data Postprocessing ─────────────────────────────────────────────
@@ -204,8 +213,14 @@ def _evaluate(query: str, answer: str, top_chunks: list[dict]) -> str:
         query=query, answer=answer, context_preview=context_preview
     )
     client = genai.Client()
-    result = client.interactions.create(model=FAST_MODEL, input=prompt)
-    return result.output_text or "Evaluation unavailable."
+    models_to_try = [FAST_MODEL] + [m for m in FALLBACK_MODELS if m != FAST_MODEL]
+    for m in models_to_try:
+        try:
+            result = client.interactions.create(model=m, input=prompt)
+            return result.output_text or "Evaluation unavailable."
+        except Exception:
+            continue
+    return "Evaluation unavailable."
 
 
 # ── Main RAG Pipeline ─────────────────────────────────────────────────────────
@@ -233,21 +248,21 @@ def run_rag_pipeline(
 
     # Step 13: Query routing
     query_type = _classify_query(query)
-    model = CAPABLE_MODEL if query_type == "complex" else FAST_MODEL
+    target_model = CAPABLE_MODEL if query_type == "complex" else FAST_MODEL
 
     # Steps 14 & 15: Hybrid retrieval + reranking
     top_chunks = _hybrid_retrieve(query, store, top_k=top_k)
     if not top_chunks:
         return RAGResponse(
             answer="No relevant documents found in the knowledge base.",
-            sources=[], model_used=model,
+            sources=[], model_used=target_model,
             query_type=query_type,
             guardrail_triggered=False,
         )
 
     # Step 16: LLM Generation
     prompt = _build_prompt(query, top_chunks)
-    raw_answer = _generate_answer(prompt, model)
+    raw_answer, model_used = _generate_answer(prompt, target_model)
 
     # Step 17: Postprocessing
     formatted_answer, sources = _format_response(raw_answer, top_chunks)
@@ -263,7 +278,7 @@ def run_rag_pipeline(
     return RAGResponse(
         answer=safe_answer,
         sources=sources,
-        model_used=model,
+        model_used=model_used,
         query_type=query_type,
         guardrail_triggered=output_flagged,
         evaluation=evaluation,

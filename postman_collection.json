@@ -1,0 +1,85 @@
+{
+	"info": {
+		"_postman_id": "402f067d-6ab3-45ab-a72e-336717a61d12",
+		"name": "Antigravity RAG API",
+		"description": "Endpoints for testing the local FastAPI RAG application.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Check Health (Root)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Trigger Ingestion",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"raw_dir\": \"data/raw\",\r\n    \"strategy\": \"semantic\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/ingest",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"ingest"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Query the Knowledge Base",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"query\": \"What are the core phases of the RAG pipeline?\",\r\n    \"top_k\": 5,\r\n    \"evaluate\": false\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/query",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"query"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
